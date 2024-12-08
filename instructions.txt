@@ -1,0 +1,10 @@
+# AI-Assisted Story Writing App for Kids (Ages 9-15)
+Using a simple web app, the kids will be able to brain storm with an LLM  on specific short story elements such as 
+1 Characters
+2 Settings
+3 Themes
+4 Plot
+5 Conflict
+5 Resolution
+
+and finally compile the story using the above elements from the LLM.
