@@ -1,24 +1,24 @@
-# Tisseur d'Histoires
+# AI Short Story Writing App for Kids
 
-Une application web interactive pour créer des histoires pour enfants en français, utilisant l'IA pour générer du contenu créatif.
+An interactive web application that helps children (ages 9-15) create short stories with AI assistance.
 
-## Fonctionnalités
+## Features
 
-- Création d'histoires guidée étape par étape
-- Génération de contenu assistée par IA
-- Interface utilisateur intuitive
-- Sauvegarde locale des progrès
-- Plusieurs options de longueur d'histoire
-- Support multilingue (Français)
+- Step-by-step story creation process
+- AI-assisted content generation
+- Interactive user interface
+- Local progress saving
+- Multiple story length options
+- Multilingual support (French)
 
-## Technologies Utilisées
+## Technologies Used
 
 - Next.js
 - React
-- Axios
+- OpenAI API
 - TailwindCSS
-- Local Storage pour la persistance des données
+- Local Storage for data persistence
 
-## Installation
+## Getting Started
 
-1. Clonez le repository 
+1. Clone the repository:

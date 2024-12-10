@@ -67,28 +67,29 @@ export default function StoryDisplay() {
   };
 
   return (
-    <div className="min-h-screen zen-bg py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen zen-bg py-12 px-4 sm:px-6 lg:px-8 print:bg-white print:p-0">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8 no-print">
+        <div className="flex justify-between items-center mb-8 print:hidden">
           <Link 
             href="/story-writer"
-            className="inline-block py-3 px-6 rounded-xl text-white zen-button"
+            className="inline-block py-3 px-6 rounded-xl text-gray-600 hover:text-gray-800 transition-colors"
           >
             ← Retour au Créateur d'Histoires
           </Link>
           <button 
             onClick={handlePrint}
-            className="py-3 px-6 rounded-xl text-white zen-button"
+            className="py-3 px-6 rounded-xl text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
           >
-            🖨️ Imprimer l'Histoire
+            <span className="text-xl">🖨️</span>
+            Imprimer l'Histoire
           </button>
         </div>
 
-        <div className="zen-card rounded-3xl p-8 print-friendly">
-          <h1 className="text-4xl font-bold text-gray-800 mb-8 font-serif text-center print-title">
+        <div className="zen-card rounded-3xl p-8 print:shadow-none print:p-0">
+          <h1 className="text-4xl font-bold text-gray-800 mb-8 font-serif text-center">
             {title}
           </h1>
-          <div className="prose prose-lg max-w-none story-content">
+          <div className="prose prose-lg max-w-none">
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
         </div>

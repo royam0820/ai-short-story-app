@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media print {
+    .print\:hidden {
+      display: none !important;
+    }
+    
+    /* Hide header and navigation elements */
+    header,
+    nav,
+    .navigation,
+    .header {
+      display: none !important;
+    }
+    
+    /* Remove any background colors and shadows */
+    * {
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    
+    /* Set standard A4 page settings */
+    @page {
+      size: A4;
+      margin: 2.54cm 3.18cm; /* Top/Bottom: 2.54cm (1 inch), Left/Right: 3.18cm (1.25 inch) */
+    }
+    
+    /* Ensure text is black for better printing */
+    body {
+      color: #000;
+      margin: 0;
+      padding: 0;
+      width: 21cm; /* A4 width */
+      min-height: 29.7cm; /* A4 height */
+      font-size: 12pt;
+    }
+
+    /* Remove all backgrounds and shadows */
+    .zen-bg,
+    .zen-card {
+      background: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+    }
+
+    /* Adjust spacing for print */
+    .prose {
+      max-width: none !important;
+      width: 100% !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+    }
+
+    /* Format text for print */
+    .prose p {
+      margin-bottom: 1.5em !important;
+      line-height: 1.6 !important;
+      text-align: justify !important;
+      font-size: 12pt !important;
+    }
+
+    /* Title formatting */
+    h1 {
+      margin-bottom: 3em !important;
+      font-size: 24pt !important;
+      text-align: center !important;
+      page-break-after: avoid !important;
+    }
+
+    /* Content container */
+    .max-w-4xl {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+    }
+
+    /* Ensure proper content width */
+    .ReactMarkdown {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+    }
+}

@@ -1,0 +1,134 @@
+:root {
+  --primary-color: #7c69ef;
+  --background-color: #f8f9fa;
+  --white: #ffffff;
+  --text-color: #1a1a1a;
+  --border-radius: 12px;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f8fafc;
+}
+
+/* Navigation */
+.navigation {
+  margin-bottom: 20px;
+}
+
+.navigation-title {
+  font-size: 16px;
+  color: #334155;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Main Title */
+.app-title {
+  font-size: 32px;
+  color: #1e293b;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Theme Section */
+.theme-section {
+  margin-bottom: 24px;
+}
+
+.theme-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  color: #1e293b;
+  margin-bottom: 20px;
+}
+
+.theme-input {
+  width: 100%;
+  min-height: 150px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.theme-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Navigation Items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #334155;
+}
+
+.nav-item.active {
+  background-color: #e8f5e9;
+}
+
+.nav-item.characters {
+  background-color: #fff1f2;
+}
+
+/* Continue Button */
+.continue-button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(to right, #7c3aed, #6d28d9);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* New Story Button */
+.new-story-button {
+  padding: 12px 24px;
+  background: linear-gradient(to right, #7c3aed, #6d28d9);
+  color: #ffffff;
+  border: none;
+  border-radius: 24px;
+  font-weight: 500;
+  cursor: pointer;
+  float: right;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.3s ease;
+}
+
+.new-story-button:hover {
+  background: linear-gradient(to right, #6d28d9, #7c3aed);
+}
+
+/* Add these new styles */
+.text-primary {
+  color: #7c69ef;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+} 

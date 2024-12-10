@@ -42,6 +42,11 @@ const getElementStatus = (elementIndex, currentElement, storyData, storyElements
   return 'pending';
 };
 
+// Add this function with your other functions at the top of the component
+const printStory = () => {
+  window.print();
+};
+
 export default function StoryWriter() {
   // Add isClient state to handle hydration
   const [isClient, setIsClient] = useState(false);
@@ -53,6 +58,7 @@ export default function StoryWriter() {
   const [loading, setLoading] = useState(false);
   const [wordCount, setWordCount] = useState(null);
   const router = useRouter();
+  const [isStoryGenerated, setIsStoryGenerated] = useState(false);
 
   // Load stored data after component mounts
   useEffect(() => {
@@ -104,41 +110,50 @@ export default function StoryWriter() {
       return;
     }
 
+    // Save the current prompt to storyData before moving to next element
+    if (prompt) {
+      setLoading(true);
+      try {
+        const response = await axios.post('/api/story-element', {
+          element: 'Compile Story',
+          prompt: `Écrivez une histoire captivante pour enfants en français en utilisant ces éléments comme guide:
+${prompt}
+
+Instructions spécifiques:
+- Évitez absolument de commencer par "Il était une fois"
+- Privilégiez une ouverture originale et immersive qui plonge directement dans l'action
+- L'histoire doit être adaptée aux enfants francophones de 9 à 15 ans
+- Évitez les conclusions moralisatrices ou les leçons explicites
+- Utilisez un style vivant et contemporain`,
+          language: 'French'
+        });
+
+        const newStoryData = { ...storyData };
+        newStoryData[storyElements[currentElement].name] = response.data.result;
+        setStoryData(newStoryData);
+        
+        // Move to next element
+        if (currentElement < storyElements.length - 1) {
+          setCurrentElement(currentElement + 1);
+          setPrompt(storyData[storyElements[currentElement + 1]?.name] || '');
+        } else {
+          setCurrentElement(storyElements.length);
+        }
+      } catch (error) {
+        console.error('Erreur de génération:', error);
+      }
+      setLoading(false);
+    }
+
     // If there's no prompt and the element is optional, just move to next
     if (!prompt && storyElements[currentElement].optional) {
       if (currentElement < storyElements.length - 1) {
         setCurrentElement(currentElement + 1);
-        // Set prompt to existing value when navigating
         setPrompt(storyData[storyElements[currentElement + 1]?.name] || '');
       } else {
         setCurrentElement(storyElements.length);
       }
-      return;
     }
-
-    setLoading(true);
-    try {
-      const response = await axios.post('/api/story-element', { 
-        element: storyElements[currentElement].name, 
-        prompt: storyElements[currentElement].name === 'Lieux' ? `Décrivez le lieu: ${prompt}` : prompt,
-        language: 'French'
-      });
-      
-      const newStoryData = { ...storyData };
-      newStoryData[storyElements[currentElement].name] = response.data.result;
-      setStoryData(newStoryData);
-      
-      if (currentElement < storyElements.length - 1) {
-        setCurrentElement(currentElement + 1);
-        // Set prompt to existing value when navigating
-        setPrompt(storyData[storyElements[currentElement + 1]?.name] || '');
-      } else {
-        setCurrentElement(storyElements.length);
-      }
-    } catch (error) {
-      console.error('Erreur de génération de l\'élément de l\'histoire:', error);
-    }
-    setLoading(false);
   };
 
   const compileStory = async () => {
@@ -173,6 +188,7 @@ Instructions spécifiques:
         pathname: '/story-display',
         query: { story: encodeURIComponent(response.data.result) }
       });
+      setIsStoryGenerated(true);
     } catch (error) {
       console.error('Erreur de compilation de l\'histoire:', error);
     }
@@ -203,10 +219,10 @@ Instructions spécifiques:
 
   return (
     <div className="min-h-screen zen-bg flex">
-      {/* Navigation Sidebar */}
-      <div className="w-64 bg-white/80 backdrop-blur-sm shadow-lg p-6 space-y-4">
-        <div className="text-xl font-semibold text-gray-700 mb-6">
-          ✨ Navigation
+      {/* Navigation Sidebar - hide on print */}
+      <div className="w-64 bg-white/80 backdrop-blur-sm shadow-lg p-6 space-y-4 print:hidden">
+        <div className="text-xl font-serif text-gray-700 mb-6 flex items-center gap-2">
+          <span className="text-yellow-400">✨</span> Navigation
         </div>
         
         {storyElements.map((element, index) => {
@@ -215,23 +231,23 @@ Instructions spécifiques:
             <button
               key={element.name}
               onClick={() => handleNavigation(index, element)}
-              className={`w-full text-left p-3 rounded-xl flex items-center transition-all duration-200 ${
+              className={`w-full text-left p-4 rounded-xl flex items-center gap-3 transition-all duration-200 ${
                 status === 'current' 
-                  ? 'nav-item-current'
+                  ? 'bg-red-100/50'
                   : status === 'completed'
-                  ? 'nav-item-completed'
+                  ? 'bg-green-100/50'
                   : status === 'required'
-                  ? 'nav-item-required'
-                  : 'nav-item-pending'
+                  ? 'bg-red-50'
+                  : 'hover:bg-gray-50'
               }`}
             >
-              <span className="nav-item-icon">{element.icon}</span>
-              <span className="flex-1 font-medium">{element.name}</span>
+              <span className="text-2xl">{element.icon}</span>
+              <span className="flex-1 font-serif text-lg">{element.name}</span>
               {status === 'completed' && (
-                <span className="nav-status-icon text-green-600">✓</span>
+                <span className="text-green-600">✓</span>
               )}
               {status === 'required' && (
-                <span className="nav-status-icon text-red-600">*</span>
+                <span className="text-red-600">*</span>
               )}
             </button>
           );
@@ -241,14 +257,14 @@ Instructions spécifiques:
         {Object.keys(storyData).length > 0 && (
           <button
             onClick={() => setCurrentElement(storyElements.length)}
-            className={`w-full text-left p-3 rounded-xl flex items-center transition-all duration-200 ${
+            className={`w-full text-left p-4 rounded-xl flex items-center gap-3 transition-all duration-200 ${
               currentElement === storyElements.length
-                ? 'nav-item-current'
-                : 'nav-item-pending'
+                ? 'bg-red-100/50'
+                : 'hover:bg-gray-50'
             }`}
           >
-            <span className="nav-item-icon">📚</span>
-            <span className="flex-1 font-medium">Histoire Finale</span>
+            <span className="text-2xl">📚</span>
+            <span className="flex-1 font-serif text-lg">Histoire Finale</span>
           </button>
         )}
       </div>
@@ -256,13 +272,14 @@ Instructions spécifiques:
       {/* Main Content */}
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
+          {/* Header - hide on print */}
+          <div className="flex justify-between items-center mb-8 print:hidden">
             <h1 className="text-5xl font-bold text-gray-800 font-serif">
               ✨ Tisseur d'Histoires
             </h1>
             <button
               onClick={resetStory}
-              className="py-3 px-6 rounded-xl text-white zen-button"
+              className="py-3 px-6 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full flex items-center gap-2 hover:from-purple-800 hover:to-purple-600 transition-all duration-300"
             >
               🔄 Nouvelle Histoire
             </button>
@@ -278,6 +295,8 @@ Instructions spécifiques:
                 
                 {storyElements[currentElement].options ? (
                   <div className="space-y-6">
+                    <div className="text-gray-700 mb-2">{storyElements[currentElement].optional && '(Optionnel)'}</div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {storyElements[currentElement].options.map((option, index) => (
                         <button
@@ -298,9 +317,8 @@ Instructions spécifiques:
                     
                     {storyElements[currentElement].allowCustomInput && (
                       <div className="mt-6">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="text-gray-700">Ou décrivez votre propre lieu :</div>
-                          {prompt && (
+                        {prompt && (
+                          <div className="flex justify-end mb-2">
                             <button
                               type="button"
                               onClick={clearCurrentElement}
@@ -309,8 +327,8 @@ Instructions spécifiques:
                               <span className="mr-1.5">🗑️</span>
                               Effacer
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                         <textarea
                           value={prompt}
                           onChange={(e) => setPrompt(e.target.value)}
@@ -323,9 +341,8 @@ Instructions spécifiques:
                   </div>
                 ) : (
                   <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="text-gray-700">{storyElements[currentElement].optional && '(Optionnel)'}</div>
-                      {prompt && (
+                    {prompt && (
+                      <div className="flex justify-end mb-2">
                         <button
                           type="button"
                           onClick={clearCurrentElement}
@@ -334,8 +351,8 @@ Instructions spécifiques:
                           <span className="mr-1.5">🗑️</span>
                           Effacer
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <textarea
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
@@ -349,15 +366,16 @@ Instructions spécifiques:
                 <button 
                   type="submit" 
                   disabled={loading || ((currentElement === 0 || currentElement === 1) && !prompt) || (storyElements[currentElement].options && !prompt && !storyElements[currentElement].optional)}
-                  className="w-full py-4 px-8 rounded-2xl text-xl font-medium text-white zen-button disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 px-8 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full flex items-center justify-center gap-2 hover:from-purple-800 hover:to-purple-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
+                  <span className="mr-2">✨</span>
                   {loading 
-                    ? '✨ Création en cours...' 
+                    ? 'Création en cours...' 
                     : currentElement === 0 || currentElement === 1
-                      ? '✨ Continuer l\'aventure' 
+                      ? 'Continuer l\'aventure' 
                       : prompt || !storyElements[currentElement].optional 
-                        ? '✨ Continuer l\'aventure' 
-                        : '✨ Passer cette étape'
+                        ? 'Continuer l\'aventure' 
+                        : 'Passer cette étape'
                   }
                 </button>
               </form>
@@ -396,7 +414,7 @@ Instructions spécifiques:
                 <button 
                   onClick={compileStory} 
                   disabled={loading || !wordCount}
-                  className="w-full py-4 px-8 rounded-2xl text-xl font-medium text-white zen-button disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 px-8 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full flex items-center justify-center gap-2 hover:from-purple-800 hover:to-purple-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? '✨ Création en cours...' : '✨ Tisser Votre Histoire'}
                 </button>
@@ -405,6 +423,21 @@ Instructions spécifiques:
                   <p className="text-sm text-red-500 text-center">
                     * Veuillez sélectionner une longueur pour votre histoire
                   </p>
+                )}
+
+                {isStoryGenerated && (
+                  <div className="flex justify-end print:hidden">
+                    <div className="print:hidden">
+                      <a href="/story-creator" className="text-gray-500">← Retour au Créateur d'Histoires</a>
+                    </div>
+                    <button 
+                      onClick={printStory}
+                      className="print:hidden py-3 px-6 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full flex items-center gap-2 hover:from-purple-800 hover:to-purple-600 transition-all duration-300"
+                    >
+                      <span className="text-xl">🖨️</span>
+                      Imprimer l'Histoire
+                    </button>
+                  </div>
                 )}
               </div>
             )}
