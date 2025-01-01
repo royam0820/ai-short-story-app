@@ -3,40 +3,68 @@ import axios from 'axios';
 import { useRouter } from 'next/router';
 
 const storyElements = [
-  { name: 'Thèmes', prompt: 'Suggérez un thème pour l\'histoire (obligatoire):', icon: '💡', optional: false },
-  { name: 'Personnages', prompt: 'Décrivez un personnage pour l\'histoire (obligatoire):', icon: '👤', optional: false },
+  { 
+    name: 'Thèmes', 
+    prompt: 'Suggérez un thème principal pour l\'histoire en 2-3 phrases courtes:', 
+    icon: '💡', 
+    optional: false 
+  },
+  { 
+    name: 'Personnages', 
+    prompt: 'Décrivez brièvement le personnage principal en 2-3 traits essentiels:', 
+    icon: '👤', 
+    optional: false 
+  },
   { 
     name: 'Lieux', 
-    prompt: 'Décrivez le lieu de votre histoire ou choisissez une suggestion (optionnel):', 
+    prompt: 'En 2-3 phrases, décrivez l\'élément le plus important du lieu:', 
     icon: '🏞️', 
     optional: true,
     options: [
-      'Forêt Enchantée - un lieu mystérieux rempli d\'arbres millénaires et de créatures magiques',
-      'Royaume Sous-Marin - une cité engloutie aux palais de corail et habitants aquatiques',
-      'Station Spatiale - une base high-tech flottant parmi les étoiles',
-      'École de Magie - un château ancien où l\'on enseigne les arts mystiques',
-      'Château Ancien - une forteresse mystérieuse aux nombreux passages secrets',
-      'Ville Futuriste - une métropole avec des gratte-ciels volants et des voitures volantes',
-      'Village Médiéval - un petit bourg paisible entouré de remparts',
-      'Île Tropicale - un paradis exotique aux trésors cachés',
-      'Monde Miniature - un univers secret à l\'échelle d\'un jardin'
+      'Forêt Enchantée - arbres millénaires et créatures magiques',
+      'Royaume Sous-Marin - cité engloutie aux palais de corail',
+      'Station Spatiale - base high-tech dans les étoiles',
+      'École de Magie - château ancien aux secrets mystiques',
+      'Château Ancien - forteresse aux passages secrets',
+      'Ville Futuriste - métropole aux gratte-ciels volants',
+      'Village Médiéval - bourg paisible fortifié',
+      'Île Tropicale - paradis aux trésors cachés',
+      'Monde Miniature - univers secret miniaturisé'
     ],
     allowCustomInput: true
   },
-  { name: 'Intrigue', prompt: 'Donnez un bref résumé de l\'intrigue (optionnel):', icon: '📜', optional: true },
-  { name: 'Conflit', prompt: 'Décrivez un conflit pour l\'histoire (optionnel):', icon: '⚔️', optional: true },
-  { name: 'Résolution', prompt: 'Suggérez une résolution pour l\'histoire (optionnel):', icon: '🎉', optional: true },
+  { 
+    name: 'Intrigue', 
+    prompt: 'En 2-3 phrases, quel est l\'événement principal de l\'histoire ?', 
+    icon: '📜', 
+    optional: true 
+  },
+  { 
+    name: 'Conflit', 
+    prompt: 'En une phrase courte, quel est l\'obstacle principal à surmonter ?', 
+    icon: '⚔️', 
+    optional: true 
+  },
+  { 
+    name: 'Résolution', 
+    prompt: 'En 2-3 phrases courtes, comment le conflit est-il résolu ?', 
+    icon: '🎉', 
+    optional: true 
+  },
 ];
 
 // Add this helper function at the top level
 const getElementStatus = (elementIndex, currentElement, storyData, storyElements) => {
+  // First check if the element is completed
   if (storyData[storyElements[elementIndex].name]) {
     return 'completed';
   }
+  // Then check if it's the current element
   if (elementIndex === currentElement) {
     return 'current';
   }
-  if (!storyElements[elementIndex].optional && !storyData[storyElements[elementIndex].name]) {
+  // Finally check if it's required but not completed
+  if (!storyElements[elementIndex].optional && elementIndex < currentElement) {
     return 'required';
   }
   return 'pending';
@@ -103,49 +131,57 @@ export default function StoryWriter() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Check for mandatory elements (themes and characters)
     if (!prompt && (currentElement === 0 || currentElement === 1)) {
       const elementName = currentElement === 0 ? 'thème' : 'personnage';
       alert(`Veuillez décrire au moins un ${elementName} pour votre histoire`);
       return;
     }
 
-    // Save the current prompt to storyData before moving to next element
     if (prompt) {
       setLoading(true);
       try {
         const response = await axios.post('/api/story-element', {
-          element: 'Compile Story',
-          prompt: `Écrivez une histoire captivante pour enfants en français en utilisant ces éléments comme guide:
-${prompt}
-
-Instructions spécifiques:
-- Évitez absolument de commencer par "Il était une fois"
-- Privilégiez une ouverture originale et immersive qui plonge directement dans l'action
-- L'histoire doit être adaptée aux enfants francophones de 9 à 15 ans
-- Évitez les conclusions moralisatrices ou les leçons explicites
-- Utilisez un style vivant et contemporain`,
-          language: 'French'
+          element: storyElements[currentElement].name,
+          prompt: prompt,
+          previousElements: storyData
         });
 
         const newStoryData = { ...storyData };
         newStoryData[storyElements[currentElement].name] = response.data.result;
-        setStoryData(newStoryData);
-        
-        // Move to next element
+
+        if (currentElement === 0 && response.data.extractedElements) {
+          const { names, locations } = response.data.extractedElements;
+          
+          if (names.length > 0) {
+            newStoryData._extractedNames = names;
+          }
+          
+          if (locations.length > 0) {
+            newStoryData._extractedLocations = locations;
+          }
+        }
+
         if (currentElement < storyElements.length - 1) {
+          const nextElement = storyElements[currentElement + 1];
+          if (nextElement.name === 'Personnages' && newStoryData._extractedNames) {
+            setPrompt(`Personnages déjà mentionnés: ${newStoryData._extractedNames.join(', ')}\n\n`);
+          } else if (nextElement.name === 'Lieux' && newStoryData._extractedLocations) {
+            setPrompt(`Lieux déjà mentionnés: ${newStoryData._extractedLocations.join(', ')}\n\n`);
+          } else {
+            setPrompt(storyData[nextElement.name] || '');
+          }
           setCurrentElement(currentElement + 1);
-          setPrompt(storyData[storyElements[currentElement + 1]?.name] || '');
         } else {
           setCurrentElement(storyElements.length);
         }
+        
+        setStoryData(newStoryData);
       } catch (error) {
         console.error('Erreur de génération:', error);
       }
       setLoading(false);
     }
 
-    // If there's no prompt and the element is optional, just move to next
     if (!prompt && storyElements[currentElement].optional) {
       if (currentElement < storyElements.length - 1) {
         setCurrentElement(currentElement + 1);
@@ -166,22 +202,36 @@ Instructions spécifiques:
     try {
       const response = await axios.post('/api/story-element', {
         element: 'Compile Story',
-        prompt: `Écrivez une histoire captivante pour enfants en français d'environ ${wordCount} mots en utilisant ces éléments comme guide:
+        wordCount: wordCount,
+        prompt: `Générez une histoire en français d'EXACTEMENT ${wordCount} mots en utilisant ces éléments comme guide:
+
 ${Object.entries(storyData)
-  .filter(([_, value]) => value)
+  .filter(([key, value]) => value && !key.startsWith('_'))
   .map(([key, value]) => `${key}: ${value}`)
-  .join('\n')}
+  .join('\n\n')}
 
 Instructions spécifiques:
-- Commencez l'histoire par "Titre: [Titre créatif]" sur la première ligne
-- Sautez une ligne avant de commencer l'histoire
-- Évitez absolument de commencer par "Il était une fois"
-- Privilégiez une ouverture originale et immersive qui plonge directement dans l'action
-- L'histoire doit être adaptée aux enfants francophones de 9 à 15 ans
-- Évitez les conclusions moralisatrices ou les leçons explicites
-- Terminez l'histoire de manière naturelle, sans paragraphe de conclusion forcée
-- Utilisez un style vivant et contemporain`,
-        language: 'French'
+1. L'histoire DOIT faire EXACTEMENT ${wordCount} mots
+2. Commencez par "Titre: [Titre créatif]" sur la première ligne
+3. Sautez une ligne avant de commencer l'histoire
+4. Structure requise:
+   - Introduction captivante (ne pas utiliser "Il était une fois")
+   - Développement avec dialogues et descriptions vivantes
+   - Climax avec le conflit principal
+   - Résolution satisfaisante
+5. Style:
+   - Phrases variées (courtes et longues)
+   - Vocabulaire riche mais accessible (9-15 ans)
+   - Dialogues naturels et engageants
+6. Évitez:
+   - Les conclusions moralisatrices
+   - Les descriptions trop longues
+   - Les répétitions inutiles
+
+Format requis:
+Titre: [Titre créatif]
+
+[Histoire de ${wordCount} mots]`,
       });
       
       router.push({
@@ -191,6 +241,7 @@ Instructions spécifiques:
       setIsStoryGenerated(true);
     } catch (error) {
       console.error('Erreur de compilation de l\'histoire:', error);
+      alert('Erreur lors de la génération de l\'histoire. Veuillez réessayer.');
     }
     setLoading(false);
   };
@@ -205,8 +256,16 @@ Instructions spécifiques:
     
     if (canNavigate) {
       setCurrentElement(index);
-      // Set prompt to existing value when navigating
-      setPrompt(storyData[element.name] || '');
+      // Set prompt to the existing content when navigating
+      if (storyData[element.name]) {
+        setPrompt(storyData[element.name]);
+      } else if (element.name === 'Personnages' && storyData._extractedNames) {
+        setPrompt(`Personnages déjà mentionnés: ${storyData._extractedNames.join(', ')}\n\n`);
+      } else if (element.name === 'Lieux' && storyData._extractedLocations) {
+        setPrompt(`Lieux déjà mentionnés: ${storyData._extractedLocations.join(', ')}\n\n`);
+      } else {
+        setPrompt('');
+      }
     } else {
       alert('Veuillez d\'abord compléter les éléments obligatoires précédents');
     }
@@ -444,36 +503,32 @@ Instructions spécifiques:
           </div>
 
           {/* Story Elements Display */}
-          {Object.keys(storyData).length > 0 && (
-            <div className="zen-card rounded-3xl p-8 space-y-8 mb-12">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-semibold text-gray-700">✨ Vos Éléments d'Histoire</h2>
-              </div>
-              {Object.entries(storyData).map(([key, value], index) => {
-                const elementIndex = storyElements.findIndex(el => el.name === key);
-                return (
-                  <div key={key} className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium text-gray-700 text-xl flex items-center">
-                        <span className="text-2xl mr-2">{storyElements.find(el => el.name === key)?.icon}</span>
-                        {key}
-                      </h3>
-                      <button
-                        onClick={() => {
-                          setCurrentElement(elementIndex);
-                          setPrompt('');
-                        }}
-                        className="text-sm text-blue-500 hover:text-blue-600 flex items-center"
-                      >
-                        ✏️ Modifier
-                      </button>
-                    </div>
-                    <p className="text-gray-600 text-lg leading-relaxed">{value}</p>
+          {Object.entries(storyData)
+            // Filter out internal tracking elements that start with '_'
+            .filter(([key]) => !key.startsWith('_'))
+            .map(([key, value], index) => {
+              const elementIndex = storyElements.findIndex(el => el.name === key);
+              return (
+                <div key={key} className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-medium text-gray-700 text-xl flex items-center">
+                      <span className="text-2xl mr-2">{storyElements.find(el => el.name === key)?.icon}</span>
+                      {key}
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setCurrentElement(elementIndex);
+                        setPrompt(value);
+                      }}
+                      className="text-sm text-blue-500 hover:text-blue-600 flex items-center"
+                    >
+                      ✏️ Modifier
+                    </button>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <p className="text-gray-600 text-lg leading-relaxed">{value}</p>
+                </div>
+              );
+            })}
         </div>
       </div>
     </div>
